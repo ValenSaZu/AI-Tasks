@@ -13,5 +13,5 @@ struct node{
 }
 
 class graph{
-    
+    vector<node> nodes;
 }
