@@ -1,0 +1,35 @@
+# Archivos de configuración de Visual Studio
+.vs/
+*.vsidx
+
+# Directorios de build
+Debug/
+Release/
+x64/
+x86/
+build/
+out/
+
+# Archivos de usuario
+*.user
+*.suo
+
+# Archivos de compilación intermedios
+*.obj
+*.pch
+*.pdb
+*.idb
+*.ipdb
+*.iobj
+
+# Binarios
+*.exe
+*.dll
+*.lib
+*.app
+*.out
+
+# Archivos de logs o temporales
+*.log
+*.tmp
+*.cache
