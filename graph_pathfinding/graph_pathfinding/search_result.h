@@ -3,9 +3,11 @@
 
 #include <vector>
 
+using namespace std;
+
 struct SearchResult {
-    std::vector<int> path;
-    std::vector<int> explored;
+    vector<int> path;
+    vector<int> explored;
 };
 
 #endif
