@@ -1,61 +1,53 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define NOMINMAX
 
-#include <Windows.h>
-#include <GL/glut.h>
 #include <iostream>
-#include <string>
+#include <GL/glut.h>
+#include "CBoard.h"
 #include "CGraphics.h"
 
 using namespace std;
 
-// Constantes
-const int WINDOW_WIDTH = 600;
-const int WINDOW_HEIGHT = 680;
-
 int main(int argc, char** argv) {
-    // Mostrar la consola para entrada/salida
-    AllocConsole();
-    freopen("CONIN$", "r", stdin);
-    freopen("CONOUT$", "w", stdout);
-    freopen("CONOUT$", "w", stderr);
-
-    // Pedir el nivel de dificultad al inicio
-    int nivelDificultad;
-
+    cout << "=== JUEGO DE DAMAS ===" << endl;
     cout << "Selecciona el nivel de dificultad: ";
-    cin >> nivelDificultad;
-
-    // Setear la dificultad
-    setDifficulty(nivelDificultad);
-
-    cout << endl;
-    cout << "Dificultad configurada al nivel: " << nivelDificultad << endl;
+    
+    int difficulty;
+    cin >> difficulty;
+    
+    if (difficulty < 1 || difficulty > 5) {
+        difficulty = 3;
+    }
+    
+    cout << "Dificultad configurada al nivel: " << difficulty << endl;
     cout << "Iniciando juego..." << endl;
-    cout << endl;
-
+    
+    // Configurar la dificultad
+    setDifficulty(difficulty);
+    
     // Inicializar GLUT
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-    glutInitWindowPosition(100, 100);
-
-    // Crear t�tulo de la ventana
-    string windowTitle = "Juego de Damas - Nivel " + to_string(nivelDificultad);
-    glutCreateWindow(windowTitle.c_str());
-
+    glutInitWindowSize(800, 600);
+    glutCreateWindow("Juego de Damas");
+    
+    // Configurar OpenGL
     initGL();
-
+    
+    // Configurar callbacks
     glutDisplayFunc(display);
     glutMouseFunc(mouse);
     glutKeyboardFunc(keyboard);
-    glutTimerFunc(1000, timer, 0);
-
-    cout << "=== CONTROLES ===" << endl;
+    
+    // Inicializar juego
+    gameBoard.initializeBoard();
+    cout << "Juego de Damas iniciado" << endl;
+    cout << "Controles:" << endl;
     cout << "- Click izquierdo: Seleccionar y mover fichas" << endl;
     cout << "- Tecla R: Reiniciar juego" << endl;
-    cout << "=================" << endl;
-
+    
+    // Iniciar loop principal
     glutMainLoop();
+    
     return 0;
 }
