@@ -1,10 +1,7 @@
-#define _CRT_SECURE_NO_WARNINGS
-#define NOMINMAX
-
-#include <Windows.h>
 #include <GL/glut.h>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 #include "CGraphics.h"
 
 using namespace std;
@@ -14,16 +11,13 @@ const int WINDOW_WIDTH = 600;
 const int WINDOW_HEIGHT = 680;
 
 int main(int argc, char** argv) {
-    // Mostrar la consola para entrada/salida
-    AllocConsole();
-    freopen("CONIN$", "r", stdin);
-    freopen("CONOUT$", "w", stdout);
-    freopen("CONOUT$", "w", stderr);
-
+    
     // Pedir el nivel de dificultad al inicio
     int nivelDificultad;
+    cout << "=== JUEGO DE DAMAS ===" << endl;
+    cout << "Niveles de dificultad:" << endl;
 
-    cout << "Selecciona el nivel de dificultad: ";
+    cout << "Selecciona el nivel de dificultad (1-5): ";
     cin >> nivelDificultad;
 
     // Setear la dificultad
@@ -40,7 +34,7 @@ int main(int argc, char** argv) {
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     glutInitWindowPosition(100, 100);
 
-    // Crear t�tulo de la ventana
+    // Crear título de la ventana
     string windowTitle = "Juego de Damas - Nivel " + to_string(nivelDificultad);
     glutCreateWindow(windowTitle.c_str());
 
@@ -53,7 +47,6 @@ int main(int argc, char** argv) {
 
     cout << "=== CONTROLES ===" << endl;
     cout << "- Click izquierdo: Seleccionar y mover fichas" << endl;
-    cout << "- Tecla R: Reiniciar juego" << endl;
     cout << "=================" << endl;
 
     glutMainLoop();

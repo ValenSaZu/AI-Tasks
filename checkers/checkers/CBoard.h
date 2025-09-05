@@ -17,28 +17,39 @@ public:
     const static int SIZE = 8;
     int board[SIZE][SIZE];
 
-    // Constructor que inicializa el tablero vacío
+    // Constructor que inicializa el tablero vacÃ­o
     CBoard() {
         initializeBoard();
     }
 
-    // Inicializa el tablero con la configuración inicial del juego
     void initializeBoard() {
-        int value = 0; // 0 para lugares vacios
+        // Primero inicializar todo a 0 (vacÃ­o)
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if (i < 3 && (i + j) % 2 == 1) {
-                    value = 1; // 1 para fichas negras
-                }
-                else if (i = SIZE - 3 && i < SIZE && (i + j) % 2 == 1) {
-                    value = 2; // 2 para fichas rojas
-                }
-                board[i][j] = value; // Se asigna según el caso
+                board[i][j] = 0;
             }
         }
-    }
+        
+        // Fichas NEGRAS (jugador) - primeras 3 filas (0, 1, 2)
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if ((i + j) % 2 == 1) {  // Solo en casillas oscuras
+                    board[i][j] = 1; // Fichas negras (jugador)
+                }
+            }
+        }
+        
+        // Fichas ROJAS (computadora) - Ãºltimas 3 filas (5, 6, 7)
+        for (int i = 5; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if ((i + j) % 2 == 1) {  // Solo en casillas oscuras
+                    board[i][j] = 2; // Fichas rojas (computadora)
+                }
+            }
+        }
+}
 
-    // Verifica si una posición está dentro del tablero
+    // Verifica si una posiciÃ³n estÃ¡ dentro del tablero
     bool isValidPosition(int x, int y) const {
         return (x >= 0 && x < SIZE && y >= 0 && y < SIZE);
     }
@@ -50,8 +61,8 @@ public:
         int dy = endY - startY;
 
         if (abs(dx) == 2 && abs(dy) == 2) {
-            // Obtenemos la posicion de la ficha que en este caso sería comida
-            // (está en medio de donde inicia y donde terminará luego del movimiento)
+            // Obtenemos la posicion de la ficha que en este caso serÃ­a comida
+            // (estÃ¡ en medio de donde inicia y donde terminarÃ¡ luego del movimiento)
             int middleX = (startX + endX) / 2;
             int middleY = (startY + endY) / 2;
             int capturedPiece = board[middleX][middleY];
@@ -70,12 +81,12 @@ public:
 
     // Mueve una ficha en el tablero
     bool movePiece(int startX, int startY, int endX, int endY, int currentPlayer) {
-        // Verificar posiciones válidas
+        // Verificar posiciones vÃ¡lidas
         if (!isValidPosition(startX, startY) || !isValidPosition(endX, endY))
             return false;
 
         int piece = board[startX][startY];
-        if (piece == 0) // Casilla vacía
+        if (piece == 0) // Casilla vacÃ­a
             return false;
 
         // Comprobar que la ficha pertenece al jugador actual
@@ -84,7 +95,7 @@ public:
         if (currentPlayer == 1 && piece != 2)
             return false;
 
-        // Comprobar que la casilla destino está vacía
+        // Comprobar que la casilla destino estÃ¡ vacÃ­a
         if (board[endX][endY] != 0)
             return false;
 
@@ -93,7 +104,7 @@ public:
 
         // Movimiento diagonal simple hacia adelante, o sea sin comer
         if (abs(dx) == 1 && abs(dy) == 1) {
-            // Para fichas normales, verificar dirección correcta
+            // Para fichas normales, verificar direcciÃ³n correcta
             if (currentPlayer == 0 && dx < 0) return false; // Negras solo avanzan hacia abajo
             if (currentPlayer == 1 && dx > 0) return false; // Rojas solo avanzan hacia arriba
             // Coloca la pieza done va y libera el lugar donde estaba

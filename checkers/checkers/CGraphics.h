@@ -13,9 +13,11 @@ using namespace std;
 // Variables globales
 CBoard gameBoard;
 CTree gameTree;
-int currentPlayer = 0; // 0: jugador (negras), 1: computadora (rojas)
+// 0: jugador humano (NEGRAS)
+// 1: computadora (ROJAS)
+int currentPlayer = 0;
 int selectedX = -1, selectedY = -1; // Casilla seleccionada
-int difficulty = 3; // Nivel de dificultad (se seteará por consola)
+int difficulty = 3; // Nivel de dificultad (se setearï¿½ por consola)
 bool gameOver = false;
 int winner = -1;
 
@@ -26,17 +28,17 @@ const int CELL_SIZE = WINDOW_SIZE / BOARD_SIZE;
 
 // Colores
 const float LIGHT_SQUARE_COLOR[] = { 0.96f, 0.87f, 0.70f }; // Beige claro
-const float DARK_SQUARE_COLOR[] = { 0.54f, 0.27f, 0.07f };  // Marrón
+const float DARK_SQUARE_COLOR[] = { 0.54f, 0.27f, 0.07f };  // Marrï¿½n
 const float BLACK_PIECE_COLOR[] = { 0.2f, 0.2f, 0.2f };     // Negro
 const float RED_PIECE_COLOR[] = { 0.8f, 0.2f, 0.2f };       // Rojo
 const float SELECTED_COLOR[] = { 0.0f, 1.0f, 0.0f, 0.3f };  // Verde transparente
 
-// Función para setear la dificultad desde main.cpp
+// Funciï¿½n para setear la dificultad desde main.cpp
 void setDifficulty(int level) {
     difficulty = level;
 }
 
-// Dibuja un cuadrado en la posición especificada
+// Dibuja un cuadrado en la posiciï¿½n especificada
 void drawSquare(int x, int y, const float color[]) {
     glColor3fv(color);
     glBegin(GL_QUADS);
@@ -47,11 +49,11 @@ void drawSquare(int x, int y, const float color[]) {
     glEnd();
 }
 
-// Dibuja un círculo en la posición especificada
+// Dibuja un cï¿½rculo en la posiciï¿½n especificada
 void drawCircle(float x, float y, float radius, const float color[]) {
     glColor3fv(color);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex2f(x, y); // Centro del círculo
+    glVertex2f(x, y); // Centro del cï¿½rculo
     for (int i = 0; i <= 360; i += 10) {
         float angle = i * 3.14159f / 180.0f;
         glVertex2f(x + radius * cos(angle), y + radius * sin(angle));
@@ -95,7 +97,7 @@ void drawPieces() {
     }
 }
 
-// Dibuja la selección actual
+// Dibuja la selecciï¿½n actual
 void drawSelection() {
     if (selectedX >= 0 && selectedY >= 0) {
         glColor4fv(SELECTED_COLOR);
@@ -119,15 +121,15 @@ void drawText(float x, float y, const char* text) {
 
 // Dibuja la interfaz de usuario
 void drawUI() {
-    // Dibujar información del juego
+    // Dibujar informaciï¿½n del juego
     int blackCount, redCount;
     gameBoard.countPieces(blackCount, redCount);
 
     string statusText;
     if (gameOver) {
-        if (winner == 0) statusText = "¡Ganaron las negras!";
-        else if (winner == 1) statusText = "¡Ganaron las rojas!";
-        else statusText = "¡Empate!";
+        if (winner == 0) statusText = "ï¿½Ganaron las negras!";
+        else if (winner == 1) statusText = "ï¿½Ganaron las rojas!";
+        else statusText = "ï¿½Empate!";
     }
     else {
         statusText = currentPlayer == 0 ? "Turno: Jugador (Negras)" : "Turno: Computadora (Rojas)";
@@ -146,7 +148,34 @@ void drawUI() {
     }
 }
 
-// Función de visualización principal
+void printBoardDebug() {
+    cout << "\n=== ESTADO DEL TABLERO ===" << endl;
+    cout << "Turno actual: " << (currentPlayer == 0 ? "Jugador (NEGRAS)" : "Computadora (ROJAS)") << endl;
+    
+    // Imprimir nÃºmeros de columnas
+    cout << "  ";
+    for (int j = 0; j < BOARD_SIZE; j++) {
+        cout << j << " ";
+    }
+    cout << endl;
+    
+    // Imprimir tablero con nÃºmeros de filas
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        cout << i << " ";
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            if (i == selectedX && j == selectedY) {
+                cout << "S "; // Casilla seleccionada
+            } else {
+                cout << gameBoard.board[i][j] << " ";
+            }
+        }
+        cout << endl;
+    }
+    cout << "0=vacÃ­o, 1=negra, 2=roja, S=seleccionada" << endl;
+    cout << "==========================\n" << endl;
+}
+
+// Funciï¿½n de visualizaciï¿½n principal
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -154,7 +183,9 @@ void display() {
     drawSelection();
     drawPieces();
 
-    // Cambiar la matriz de proyección para dibujar texto
+    printBoardDebug();
+
+    // Cambiar la matriz de proyecciï¿½n para dibujar texto
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -173,31 +204,45 @@ void display() {
     glutSwapBuffers();
 }
 
-// Maneja el clic del mouse
 void mouse(int button, int state, int x, int y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && !gameOver && currentPlayer == 0) {
-        int boardY = x / CELL_SIZE;
-        int boardX = BOARD_SIZE - 1 - (y / CELL_SIZE);
+        // Convertir coordenadas de pantalla a coordenadas del tablero
+        int col = x / CELL_SIZE;  // j en el tablero
+        int row = BOARD_SIZE - 1 - (y / CELL_SIZE);  // i en el tablero
+        
+        cout << "Click en: x=" << x << ", y=" << y 
+             << " -> Tablero: row=" << row << ", col=" << col << endl;
 
-        if (boardX >= 0 && boardX < BOARD_SIZE && boardY >= 0 && boardY < BOARD_SIZE) {
+        if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
             // Si ya hay una ficha seleccionada, intentar moverla
             if (selectedX >= 0 && selectedY >= 0) {
-                if (gameBoard.movePiece(selectedX, selectedY, boardX, boardY, currentPlayer)) {
-                    currentPlayer = 1 - currentPlayer; // Cambiar turno
-
+                cout << "Intentando mover de (" << selectedX << "," << selectedY 
+                     << ") a (" << row << "," << col << ")" << endl;
+                
+                if (gameBoard.movePiece(selectedX, selectedY, row, col, currentPlayer)) {
+                    cout << "Movimiento exitoso!" << endl;
+                    currentPlayer = 1; // Cambiar a turno de la computadora
+                    
                     // Verificar si el juego ha terminado
                     if (gameBoard.isGameOver()) {
                         gameOver = true;
                         winner = gameBoard.getWinner();
+                        cout << "Juego terminado! Ganador: " << winner << endl;
                     }
+                } else {
+                    cout << "Movimiento invÃ¡lido" << endl;
                 }
                 selectedX = -1;
                 selectedY = -1;
             }
-            // Seleccionar una ficha del jugador actual
-            else if (gameBoard.board[boardX][boardY] == 1) {
-                selectedX = boardX;
-                selectedY = boardY;
+            // Seleccionar una ficha del jugador actual (NEGRAS = 1)
+            else if (gameBoard.board[row][col] == 1) {
+                cout << "Ficha seleccionada en (" << row << "," << col << ")" << endl;
+                selectedX = row;
+                selectedY = col;
+            }
+            else {
+                cout << "No es una ficha del jugador o casilla vacÃ­a" << endl;
             }
         }
         glutPostRedisplay();
@@ -207,21 +252,29 @@ void mouse(int button, int state, int x, int y) {
 // Realiza el movimiento de la computadora
 void computerMove() {
     if (currentPlayer == 1 && !gameOver) {
+        cout << "Computadora pensando..." << endl;
+        
         int startX, startY, endX, endY;
-
         gameTree.setMaxDepth(difficulty);
+        
         if (gameTree.findBestMove(gameBoard, startX, startY, endX, endY, true)) {
+            cout << "Computadora mueve de (" << startX << "," << startY 
+                 << ") a (" << endX << "," << endY << ")" << endl;
+            
             gameBoard.movePiece(startX, startY, endX, endY, currentPlayer);
+            currentPlayer = 0; // Volver al turno del jugador
+
+            // Verificar si el juego ha terminado
+            if (gameBoard.isGameOver()) {
+                gameOver = true;
+                winner = gameBoard.getWinner();
+                cout << "Juego terminado! Ganador: " << winner << endl;
+            }
+        } else {
+            cout << "Computadora no encontrÃ³ movimientos vÃ¡lidos" << endl;
+            currentPlayer = 0; // Pasar turno si no hay movimientos
         }
-
-        currentPlayer = 0; // Volver al turno del jugador
-
-        // Verificar si el juego ha terminado
-        if (gameBoard.isGameOver()) {
-            gameOver = true;
-            winner = gameBoard.getWinner();
-        }
-
+        
         glutPostRedisplay();
     }
 }
@@ -229,6 +282,7 @@ void computerMove() {
 // Temporizador para el movimiento de la computadora
 void timer(int value) {
     if (currentPlayer == 1 && !gameOver) {
+        cout << "Timer activado - Turno de la computadora" << endl;
         computerMove();
     }
     glutTimerFunc(1000, timer, 0); // Llamar cada segundo
