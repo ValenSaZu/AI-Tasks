@@ -17,3 +17,4 @@ Este repositorio contiene:
 - Git instalado.
 - Visual Studio Community
 - C++
+- Glut

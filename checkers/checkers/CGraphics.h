@@ -178,7 +178,7 @@ void mouse(int button, int state, int x, int y) {
                     cout << "Ahora selecciona una casilla VACÍA una fila ABAJO para mover" << endl;
                 }
                 else {
-                    cout << "✗ No es una ficha tuya. Solo puedes mover fichas NEGRAS" << endl;
+                    cout << "No es una ficha tuya. Solo puedes mover fichas NEGRAS" << endl;
                 }
             }
             else {
@@ -237,17 +237,19 @@ void mouse(int button, int state, int x, int y) {
                             }
                             else {
                                 cout << "La computadora no tiene movimientos válidos" << endl;
-                                currentPlayer = 0; // Volver al jugador humano
+                                gameBoard.isGameOver();
+								int winner = gameBoard.getWinner();
+								cout << "¡Juego terminado! Ganador: " << (winner == 0 ? "Jugador" : "Computadora") << endl;
                             }
                         }
                     }
                     else {
-                        cout << "✗ Movimiento inválido" << endl;
+                        cout << "Movimiento inválido" << endl;
                         cout << "Recuerda: Fichas negras solo pueden moverse DIAGONALMENTE HACIA ABAJO" << endl;
                     }
                 }
                 else {
-                    cout << "✗ No puedes mover a una casilla ocupada por el oponente" << endl;
+                    cout << "No puedes mover a una casilla ocupada por el oponente" << endl;
                 }
             }
         }

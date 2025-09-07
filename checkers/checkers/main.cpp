@@ -9,7 +9,6 @@
 
 using namespace std;
 
-// Declaración de funciones externas definidas en CGraphics.h
 void initGL();
 void display();
 void mouse(int button, int state, int x, int y);

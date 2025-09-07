@@ -1,6 +1,6 @@
 # Pathfinding en OpenGL
 
-**Laboratorio 1 - Entrega: 29 Agosto 2025**  
+**Laboratorio 01 - Entrega: 29 Agosto 2025**  
 Implementación de búsquedas ciegas y heurísticas en un grafo generado dinámicamente.
 
 ## Descripción
