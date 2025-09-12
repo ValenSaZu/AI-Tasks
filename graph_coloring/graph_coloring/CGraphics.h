@@ -1,7 +1,8 @@
-#ifndef CGraphics_h
-#define CGraphics_h
+#ifndef CGRAPHICS_H
+#define CGRAPHICS_H
 
 #include "CGraph.h"
+#include "CColoring.h"
 #include <vector>
 #include <functional>
 #include <iostream>
@@ -9,115 +10,79 @@
 #include <ctime>
 #include <algorithm>
 #include <cmath>
+#include <GL/glut.h>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
-//TODO: Quitar todas aquellas funciones que no se usan en este archivo y cambiar aquellas que s[i a la nueva implementacion
-
 class CGraphics {
 public:
-    CGraphics(int windowWidth = 1000, int windowHeight = 800, int nodeRadius = 8)
+    CGraphics(int windowWidth = 1000, int windowHeight = 800, int nodeRadius = 20)
         : windowWidth(windowWidth), windowHeight(windowHeight),
-        baseNodeRadius(nodeRadius),
-        startNode(-1), goalNode(-1), algorithmType(0),
-        removalPercentage(0.0), gridWidth(0), gridHeight(0) {
+        baseNodeRadius(nodeRadius), selectedAlgorithm(0), nColors(4) {
+        graph = new Graph(8); // Grafo por defecto con 8 nodos
+        calculateNodePositions();
     }
 
-    void initializeGraph(int width, int height, float removalPct) {
-        gridWidth = width;
-        gridHeight = height;
-        removalPercentage = removalPct;
+    ~CGraphics() {
+        if (graph) delete graph;
+    }
 
-        graph.buildGrid(gridWidth, gridHeight);
-        removedNodes.clear();
-        removedNodes.resize(gridWidth * gridHeight, false);
-
-        // Eliminar nodos aleatoriamente seg�n el porcentaje
-        if (removalPercentage > 0.0) {
-            srand(static_cast<unsigned int>(time(0)));
-            int totalNodes = gridWidth * gridHeight;
-            int nodesToRemove = static_cast<int>(removalPercentage * totalNodes);
-            int removedCount = 0;
-
-            while (removedCount < nodesToRemove) {
-                int nodeToRemove = rand() % totalNodes;
-                if (!removedNodes[nodeToRemove]) {
-                    removedNodes[nodeToRemove] = true;
-                    removedCount++;
-
-                    // Eliminar referencias al nodo eliminado
-                    for (auto& node : graph.nodes) {
-                        auto it = remove_if(node.neighbors.begin(), node.neighbors.end(),
-                            [nodeToRemove](const Edge& e) { return e.destination == nodeToRemove; });
-                        node.neighbors.erase(it, node.neighbors.end());
-                    }
-
-                    // Limpiar vecinos del nodo eliminado
-                    graph.nodes[nodeToRemove].neighbors.clear();
-                }
-            }
-        }
-
-        startNode = -1;
-        goalNode = -1;
-        currentPath.clear();
-        exploredNodes.clear();
+    void initializeGraph(int numNodes = 8, double density = 0.57) {
+        if (graph) delete graph;
+        graph = new Graph(numNodes, density);
+        calculateNodePositions();
 
         if (onGraphChanged) onGraphChanged();
     }
 
     void drawGraph() const {
+        if (!graph) return;
+
         float dynamicRadius = getDynamicNodeRadius();
 
         // Dibujar conexiones
-        glColor3f(0.7, 0.7, 0.7);
-        glLineWidth(1.0);
+        glColor3f(0.5, 0.5, 0.5);
+        glLineWidth(1.5);
 
-        for (const auto& node : graph.nodes) {
-            if (removedNodes[node.id]) continue;
-
+        for (const auto& node : graph->nodes) {
             float startX, startY;
             gridToScreen(node.x, node.y, startX, startY);
 
             for (const auto& edge : node.neighbors) {
-                if (node.id < edge.destination && !removedNodes[edge.destination]) {
-                    float endX, endY;
-                    gridToScreen(graph.nodes[edge.destination].x,
-                        graph.nodes[edge.destination].y, endX, endY);
+                float endX, endY;
+                gridToScreen(graph->nodes[edge.destination].x,
+                    graph->nodes[edge.destination].y, endX, endY);
 
-                    glBegin(GL_LINES);
-                    glVertex2f(startX, startY);
-                    glVertex2f(endX, endY);
-                    glEnd();
-                }
+                glBegin(GL_LINES);
+                glVertex2f(startX, startY);
+                glVertex2f(endX, endY);
+                glEnd();
             }
         }
 
         // Dibujar nodos
-        for (const auto& node : graph.nodes) {
-            if (removedNodes[node.id]) continue;
-
+        for (const auto& node : graph->nodes) {
             float screenX, screenY;
             gridToScreen(node.x, node.y, screenX, screenY);
 
-            // Determinar color del nodo
-            if (node.id == startNode) {
-                glColor3f(0.0, 1.0, 0.0); // Verde para inicio
-            }
-            else if (node.id == goalNode) {
-                glColor3f(1.0, 0.0, 0.0); // Rojo para fin
-            }
-            else if (find(currentPath.begin(), currentPath.end(), node.id) != currentPath.end()) {
-                glColor3f(1.0, 0.0, 0.0); // Rojo para camino final
-            }
-            else if (find(exploredNodes.begin(), exploredNodes.end(), node.id) != exploredNodes.end()) {
-                glColor3f(0.0, 0.0, 1.0); // Azul para nodos explorados
-            }
-            else {
-                glColor3f(0.8, 0.8, 0.8); // Gris claro para nodos normales
+            // Asignar color según el color del nodo
+            switch (node.color) {
+            case 0: glColor3f(1.0, 0.0, 0.0); break; // Rojo
+            case 1: glColor3f(0.0, 1.0, 0.0); break; // Verde
+            case 2: glColor3f(0.0, 0.0, 1.0); break; // Azul
+            case 3: glColor3f(1.0, 1.0, 0.0); break; // Amarillo
+            case 4: glColor3f(1.0, 0.0, 1.0); break; // Magenta
+            case 5: glColor3f(0.0, 1.0, 1.0); break; // Cian
+            case 6: glColor3f(1.0, 0.5, 0.0); break; // Naranja
+            case 7: glColor3f(0.5, 0.0, 0.5); break; // Púrpura
+            case 8: glColor3f(0.5, 0.5, 0.5); break; // Gris
+            case 9: glColor3f(0.0, 0.5, 0.5); break; // Verde azulado
+            default: glColor3f(0.8, 0.8, 0.8); break; // Gris (sin color)
             }
 
-            // Dibujar c�rculo
+            // Dibujar círculo del nodo
             glBegin(GL_TRIANGLE_FAN);
             glVertex2f(screenX, screenY);
             for (int i = 0; i <= 360; i += 10) {
@@ -137,160 +102,154 @@ public:
                     screenY + dynamicRadius * sin(angle));
             }
             glEnd();
-        }
-    }
 
-    void handleMouseClick(int x, int y) {
-        // Convertir coordenadas de pantalla a grid con comprobaci�n de l�mites
-        float padding = 50;
-        float availableWidth = windowWidth - 2 * padding;
-        float availableHeight = windowHeight - 2 * padding;
+            // Dibujar ID del nodo
+            glColor3f(0.0, 0.0, 0.0);
+            glRasterPos2f(screenX - 5, screenY - 5);
+            string idStr = to_string(node.id);
+            for (char c : idStr) {
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
+            }
 
-        if (availableWidth <= 0 || availableHeight <= 0) return;
-
-        float gridX = (x - padding) * max(1, gridWidth - 1) / availableWidth;
-        float gridY = ((windowHeight - y) - padding) * max(1, gridHeight - 1) / availableHeight;
-
-        // Comprobar que las coordenadas est�n dentro del grid
-        if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) {
-            return;
+            // Dibujar color asignado
+            glRasterPos2f(screenX - 5, screenY - 20);
+            string colorStr = "C:" + to_string(node.color);
+            for (char c : colorStr) {
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, c);
+            }
         }
 
-        int closestNode = findClosestNode(gridX, gridY);
-        if (closestNode == -1) return;
-
-        if (startNode == -1) {
-            startNode = closestNode;
-        }
-        else if (goalNode == -1 && closestNode != startNode) {
-            goalNode = closestNode;
-            runSelectedAlgorithm();
-        }
-        else {
-            // Resetear para nueva selecci�n
-            startNode = closestNode;
-            goalNode = -1;
-            currentPath.clear();
-            exploredNodes.clear();
-        }
+        // Dibujar información del algoritmo seleccionado
+        drawAlgorithmInfo();
     }
 
     void handleKeyboard(unsigned char key) {
+        if (!graph) return;
+
         switch (key) {
-        case 'r':
-            cout << "Nuevo porcentaje de eliminacion (0-100): ";
-            float newPercentage;
-            cin >> newPercentage;
-            removalPercentage = newPercentage / 100.0;
-            initializeGraph(gridWidth, gridHeight, removalPercentage);
+        case '1':
+            selectedAlgorithm = 0;
+            cout << "Ejecutando: Busqueda Ciega" << endl;
+            BlindSearch(*graph, nColors);
             break;
-        case '1': case '2': case '3': case '4': case '5':
-            algorithmType = key - '1';
-            if (goalNode != -1) {
-                runSelectedAlgorithm();
-            }
-            if (onAlgorithmChanged) onAlgorithmChanged();
+        case '2':
+            selectedAlgorithm = 1;
+            cout << "Ejecutando: Backtracking Busqueda Ciega" << endl;
+            BacktrackingBlindSearch(*graph, nColors);
+            break;
+        case '3':
+            selectedAlgorithm = 2;
+            cout << "Ejecutando: Forward Checking" << endl;
+            ForwardChecking(*graph, nColors);
+            break;
+        case '4':
+            selectedAlgorithm = 3;
+            cout << "Ejecutando: Variable Mas Restrictiva" << endl;
+            variableMoreRestrictive(*graph, nColors);
+            break;
+        case '5':
+            selectedAlgorithm = 4;
+            cout << "Ejecutando: Variable Mas Restringida" << endl;
+            variableMoreRestricted(*graph, nColors);
+            break;
+        case '6':
+            selectedAlgorithm = 5;
+            cout << "Ejecutando: Valor Menos Restrictivo" << endl;
+            valueLessRestrictive(*graph, nColors);
+            break;
+        case 'r':
+            cout << "Reiniciando colores..." << endl;
+            graph->cleanAll();
+            break;
+        case 'n':
+            cout << "Generando nuevo grafo..." << endl;
+            initializeGraph(8, 0.57);
+            break;
+        case '+':
+            nColors = min(10, nColors + 1);
+            cout << "Numero de colores: " << nColors << endl;
+            break;
+        case '-':
+            nColors = max(2, nColors - 1);
+            cout << "Numero de colores: " << nColors << endl;
             break;
         }
+        if (onAlgorithmChanged) onAlgorithmChanged();
     }
 
-    // Getters para acceso externo
-    int getAlgorithmType() const { return algorithmType; }
-    int getStartNode() const { return startNode; }
-    int getGoalNode() const { return goalNode; }
-    const vector<int>& getCurrentPath() const { return currentPath; }
-    const vector<int>& getExploredNodes() const { return exploredNodes; }
-    const Graph& getGraph() const { return graph; }
+    int getSelectedAlgorithm() const { return selectedAlgorithm; }
+    Graph* getGraph() const { return graph; }
+    int getNColors() const { return nColors; }
 
-    // Callbacks para interacci�n externa
+    // Callbacks para interacción externa
     function<void()> onGraphChanged;
     function<void()> onAlgorithmChanged;
 
 private:
-    Graph graph;
-    int gridWidth, gridHeight;
-    float removalPercentage;
-    vector<bool> removedNodes;
-    int startNode, goalNode;
-    vector<int> currentPath;
-    vector<int> exploredNodes;
-    int algorithmType;
-
+    Graph* graph = nullptr;
     int windowWidth, windowHeight;
     int baseNodeRadius;
+    int selectedAlgorithm;
+    int nColors;
 
     float getDynamicNodeRadius() const {
-        if (gridWidth <= 0 || gridHeight <= 0) return baseNodeRadius;
+        if (!graph || graph->nodes.empty()) return baseNodeRadius;
 
-        // F�rmula mejorada: radio = 400 / ?(ancho * alto)
-        int totalNodes = gridWidth * gridHeight;
-        float dynamicRadius = 200.0f / sqrt(totalNodes);
-
-        dynamicRadius = max(3.0f, dynamicRadius); // M�nimo 3 p�xeles
-        dynamicRadius = min(static_cast<float>(baseNodeRadius), dynamicRadius); // M�ximo el radio base
+        // Ajustar radio según número de nodos
+        float dynamicRadius = 200.0f / sqrt(graph->nodes.size());
+        dynamicRadius = max(10.0f, min(static_cast<float>(baseNodeRadius), dynamicRadius));
 
         return dynamicRadius;
     }
 
-    void gridToScreen(int gridX, int gridY, float& screenX, float& screenY) const {
-        float padding = 50;
-        float availableWidth = windowWidth - 2 * padding;
-        float availableHeight = windowHeight - 2 * padding;
-
-        float xScale = (gridWidth > 1) ? availableWidth / (gridWidth - 1) : 0;
-        float yScale = (gridHeight > 1) ? availableHeight / (gridHeight - 1) : 0;
-
-        screenX = padding + gridX * xScale;
-        screenY = padding + gridY * yScale;
+    void gridToScreen(float gridX, float gridY, float& screenX, float& screenY) const {
+        // Convertir coordenadas normalizadas (0-1) a coordenadas de pantalla
+        screenX = gridX * windowWidth;
+        screenY = (1.0f - gridY) * windowHeight; // Invertir Y para coordenadas GLUT
     }
 
-    int findClosestNode(float gridX, float gridY) const {
-        int closestNode = -1;
-        float dynamicRadius = getDynamicNodeRadius();
-        float minDist = dynamicRadius * 2;
+    void calculateNodePositions() {
+        if (!graph) return;
 
-        for (const auto& node : graph.nodes) {
-            if (removedNodes[node.id]) continue;
+        int n = graph->nodes.size();
+        float radius = 0.4f;
+        float angle = 2.0f * 3.14159f / n;
 
-            float dist = sqrt(pow(node.x - gridX, 2) + pow(node.y - gridY, 2));
-            if (dist < minDist) {
-                minDist = dist;
-                closestNode = node.id;
-            }
+        for (int i = 0; i < n; i++) {
+            graph->nodes[i].x = 0.5f + radius * cos(i * angle);
+            graph->nodes[i].y = 0.5f + radius * sin(i * angle);
         }
-
-        return closestNode;
     }
 
-    void runSelectedAlgorithm() {
-        if (startNode == -1 || goalNode == -1 ||
-            !graph.nodeExists(startNode) || !graph.nodeExists(goalNode)) {
-            return;
+    void drawAlgorithmInfo() const {
+        vector<string> algorithmNames = {
+            "1. Busqueda Ciega",
+            "2. Backtracking Busqueda Ciega",
+            "3. Forward Checking",
+            "4. Variable Mas Restrictiva",
+            "5. Variable Mas Restringida",
+            "6. Valor Menos Restrictivo"
+        };
+
+        glColor3f(0.0, 0.0, 0.0);
+        glRasterPos2f(10, windowHeight - 20);
+        string info = "Algoritmo: " + algorithmNames[selectedAlgorithm];
+        for (char c : info) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
         }
 
-        SearchResult result;
-
-        try {
-            if (algorithmType >= 2) {
-                graph.setHeuristics(goalNode);
-            }
-
-            switch (algorithmType) {
-            case 0: result = BFS(graph, startNode, goalNode); break;
-            case 1: result = DFS(graph, startNode, goalNode); break;
-            case 2: result = hillClimbing(graph, startNode, goalNode); break;
-            case 3: result = bestFirstSearch(graph, startNode, goalNode); break;
-            case 4: result = aStar(graph, startNode, goalNode); break;
-            default: result = BFS(graph, startNode, goalNode); break;
-            }
-
-            currentPath = result.path;
-            exploredNodes = result.explored;
+        // Información de colores
+        glRasterPos2f(10, windowHeight - 40);
+        string colorsInfo = "Colores: " + to_string(nColors) + " (+/- para cambiar)";
+        for (char c : colorsInfo) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
         }
-        catch (const exception& e) {
-            cerr << "Error ejecutando algoritmo: " << e.what() << endl;
-            currentPath.clear();
-            exploredNodes.clear();
+
+        // Instrucciones
+        glRasterPos2f(10, windowHeight - 60);
+        string instructions = "Teclas: 1-6 (algoritmos), r (reiniciar), n (nuevo grafo)";
+        for (char c : instructions) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
         }
     }
 };

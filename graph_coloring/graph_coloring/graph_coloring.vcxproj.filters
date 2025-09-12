@@ -26,5 +26,8 @@
     <ClInclude Include="CGraphics.h">
       <Filter>Archivos de recursos</Filter>
     </ClInclude>
+    <ClInclude Include="CColoring.h">
+      <Filter>Archivos de recursos</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

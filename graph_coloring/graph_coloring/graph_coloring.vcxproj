@@ -126,6 +126,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CColoring.h" />
     <ClInclude Include="CGraph.h" />
     <ClInclude Include="CGraphics.h" />
   </ItemGroup>
