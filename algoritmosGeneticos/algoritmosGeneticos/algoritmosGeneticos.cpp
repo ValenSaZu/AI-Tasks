@@ -1,8 +1,7 @@
-//
 //  main.cpp
 //  AlgoritmosGeneticos
 //
-//  Created by Amara Barrera on 18/09/25.
+//  Created by Amara Barrera, Maria Belen Calle and Camila Salazar on 19/09/25.
 //
 
 #include <iostream>
@@ -10,6 +9,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 class individuo{
@@ -194,11 +194,21 @@ int main() { //probandooo
     srand((unsigned) time(0));
     poblacion P;
 
+    ofstream file("resultados.csv");
+    file << "Generacion,Promedio,Mejor\n";
+
     for(int gen=0; gen<100; gen++){
         P.updateGeneration(0.7, 0.01);
+        float prom = P.promedio();
+        float best = P.best();
+
         cout << "Gen " << gen
-             << " | Promedio: " << P.promedio()
-             << " | Best: " << P.best() << endl;
+             << " | Promedio: " << prom
+             << " | Best: " << best << endl;
+
+        file << gen << "," << prom << "," << best << "\n";
     }
+
+    file.close();
     return 0;
 }
