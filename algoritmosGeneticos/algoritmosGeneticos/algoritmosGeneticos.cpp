@@ -1,7 +1,8 @@
-//  main.cpp
+//  algoritmosGeneticos_mejorado.cpp
 //  AlgoritmosGeneticos
 //
 //  Created by Amara Barrera, Maria Belen Calle and Camila Salazar on 19/09/25.
+//  Modificado para mejores resultados de convergencia
 //
 
 #include <iostream>
@@ -10,6 +11,7 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 using namespace std;
 
 class individuo{
@@ -48,19 +50,20 @@ public:
         x = -63 + (valorX/127.0) * 126;
         y = -63 + (valorY/127.0) * 126;
         
-        //3. retornar valor de aptitud
+        //3. retornar valor de aptitud para minimización
         return aptitud = pow(x,2) - pow(y,2) + 2*x*y;
     }
 };
-
 
 //clase poblacion
 class poblacion{
 public:
     vector<individuo> vPoblacion;
+    int tamanoPoblacion;
     
-    poblacion(){
-        for(int i=0; i<20; i++)
+    poblacion(int tamano = 50){
+        tamanoPoblacion = tamano;
+        for(int i=0; i<tamanoPoblacion; i++)
             vPoblacion.push_back(individuo()); //inicializar vector
     }
     
@@ -71,8 +74,7 @@ public:
     
     void evaluarAptitud(){
         const int numThreads = 4;
-        const int tamPoblacion = (int)vPoblacion.size();
-        const int individuosPorThread = tamPoblacion / numThreads;
+        const int individuosPorThread = tamanoPoblacion / numThreads;
                 
         vector<thread> threads;
                 
@@ -81,9 +83,9 @@ public:
             int inicio = i * individuosPorThread;
             int fin;
                     
-        //último thread toma cualquier individuo restante
+            //último thread toma cualquier individuo restante
             if(i == numThreads - 1)
-                fin = tamPoblacion;
+                fin = tamanoPoblacion;
             else
                 fin = (i + 1) * individuosPorThread;
                     
@@ -109,106 +111,142 @@ public:
             if(vPoblacion[i].aptitud < theBest)
                 theBest = vPoblacion[i].aptitud;
         }
-        
         return theBest;
     }
     
-    //estrategias
-    //mutacion
+    // Selección por torneo para mejorar convergencia
+    individuo seleccionTorneo(){
+        int tamanoTorneo = 3;
+        individuo mejor = vPoblacion[rand() % tamanoPoblacion];
+        
+        for(int i = 1; i < tamanoTorneo; i++){
+            individuo competidor = vPoblacion[rand() % tamanoPoblacion];
+            if(competidor.aptitud < mejor.aptitud){
+                mejor = competidor;
+            }
+        }
+        return mejor;
+    }
+    
+    //mutación mejorada
     void mutacion(float prob){
         for(int i=0; i<vPoblacion.size(); i++){
             for(int j=0; j<vPoblacion[i].cromosoma.size(); j++){
                 float r = (float) rand()/RAND_MAX;
-                if(r < prob){ //intercambiando bits (se puede simplificar si queremos)
-                    if(vPoblacion[i].cromosoma[j] == 0)
-                        vPoblacion[i].cromosoma[j] = 1;
-                    else
-                        vPoblacion[i].cromosoma[j] = 0;
+                if(r < prob){
+                    vPoblacion[i].cromosoma[j] = 1 - vPoblacion[i].cromosoma[j];
                 }
             }
         }
     }
     
-    //cruzamiento
-    /*void cruzamiento(float prob){
+    //cruzamiento mejorado con selección por torneo
+    void cruzamiento(float prob){
         vector<individuo> newGeneration;
-        for(int i=0; i<vPoblacion.size(); i+=2){
-            individuo p1 = vPoblacion[i];
-            individuo p2 = vPoblacion[i+1];
+        
+        // Elitismo: preservar al mejor individuo
+        individuo mejor = vPoblacion[0];
+        for(int i = 1; i < tamanoPoblacion; i++){
+            if(vPoblacion[i].aptitud < mejor.aptitud){
+                mejor = vPoblacion[i];
+            }
+        }
+        newGeneration.push_back(mejor);
+        
+        // Generar el resto de la población
+        while(newGeneration.size() < tamanoPoblacion){
+            individuo p1 = seleccionTorneo();
+            individuo p2 = seleccionTorneo();
             
             float r = (float)rand()/RAND_MAX;
             
-            //haciendo el cruzameinto
-            if(r<prob){
-                int point = rand() % 13 + 1;
+            if(r < prob && newGeneration.size() + 1 < tamanoPoblacion){
+                // Cruzamiento de dos puntos
+                int point1 = rand() % 13 + 1;
+                int point2 = rand() % 13 + 1;
+                if(point1 > point2) swap(point1, point2);
                 
                 individuo h1, h2;
                 h1.cromosoma.clear();
                 h2.cromosoma.clear();
                 
-                //push a la primera mitad
-                for(int j=0; j<point; j++){
+                // Primera parte
+                for(int j=0; j<point1; j++){
                     h1.cromosoma.push_back(p1.cromosoma[j]);
                     h2.cromosoma.push_back(p2.cromosoma[j]);
                 }
                 
-                //push a la segunda mitad
-                for(int j=point; j<14; j++){
+                // Parte media (intercambiada)
+                for(int j=point1; j<point2; j++){
                     h1.cromosoma.push_back(p2.cromosoma[j]);
                     h2.cromosoma.push_back(p1.cromosoma[j]);
                 }
                 
-                //push al vector de nueva generacion
+                // Última parte
+                for(int j=point2; j<14; j++){
+                    h1.cromosoma.push_back(p1.cromosoma[j]);
+                    h2.cromosoma.push_back(p2.cromosoma[j]);
+                }
+                
                 newGeneration.push_back(h1);
-                newGeneration.push_back(h2);
-            }
-            
-            //si no hay cruzamiento
-            else{
+                if(newGeneration.size() < tamanoPoblacion){
+                    newGeneration.push_back(h2);
+                }
+            } else {
                 newGeneration.push_back(p1);
-                newGeneration.push_back(p2);
+                if(newGeneration.size() < tamanoPoblacion){
+                    newGeneration.push_back(p2);
+                }
             }
+        }
+        
+        // Asegurar que la nueva generación tenga el tamaño correcto
+        while(newGeneration.size() > tamanoPoblacion){
+            newGeneration.pop_back();
         }
         
         vPoblacion = newGeneration;
     }
-    */
-    //completarlo o no, no es necesario
-    //void elitismo(){}
     
     void updateGeneration(float probCruzamiento, float probMutacion){
-        
         evaluarAptitud();
-        
-        //cruzamiento(probCruzamiento);
-        
+        cruzamiento(probCruzamiento);
         mutacion(probMutacion);
-        
-        //llama a evaluar Aptitud para calcular las nuevas aptitudes de la nueva generacion
         evaluarAptitud();
     }
 };
 
-
-int main() { //probandooo
-    srand((unsigned) time(0));
-    poblacion P;
+int main() {
+    // Semilla fija para resultados reproducibles
+    srand(42);
+    
+    // Población más grande para mejor convergencia
+    poblacion P(50);
 
     ofstream file("resultados.csv");
     file << "Generacion,Promedio,Mejor\n";
 
+    cout << "Iniciando Algoritmo Genético para minimizar f(x,y) = x² - y² + 2xy" << endl;
+    cout << "Población: 50 individuos, Generaciones: 100" << endl;
+    cout << "Rango: x,y ∈ [-63, 63]" << endl << endl;
+
     for(int gen=0; gen<100; gen++){
-        P.updateGeneration(0.7, 0.01);
+        // Parámetros ajustados para mejor convergencia
+        P.updateGeneration(0.8, 0.02);
         float prom = P.promedio();
         float best = P.best();
 
         cout << "Gen " << gen
              << " | Promedio: " << prom
-             << " | Best: " << best << endl;
+             << " | Mejor: " << best << endl;
 
         file << gen << "," << prom << "," << best << "\n";
     }
 
     file.close();
+    
+    cout << "\nOptimización completada. Archivo 'resultados.csv' generado." << endl;
+    cout << "Ejecuta 'python graficar.py' para ver la gráfica." << endl;
+    
     return 0;
 }
