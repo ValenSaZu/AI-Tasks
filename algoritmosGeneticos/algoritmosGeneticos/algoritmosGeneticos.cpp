@@ -130,7 +130,7 @@ public:
     }
     
     //cruzamiento
-    void cruzamiento(float prob){
+    /*void cruzamiento(float prob){
         vector<individuo> newGeneration;
         for(int i=0; i<vPoblacion.size(); i+=2){
             individuo p1 = vPoblacion[i];
@@ -172,7 +172,7 @@ public:
         
         vPoblacion = newGeneration;
     }
-    
+    */
     //completarlo o no, no es necesario
     //void elitismo(){}
     
@@ -180,7 +180,7 @@ public:
         
         evaluarAptitud();
         
-        cruzamiento(probCruzamiento);
+        //cruzamiento(probCruzamiento);
         
         mutacion(probMutacion);
         
