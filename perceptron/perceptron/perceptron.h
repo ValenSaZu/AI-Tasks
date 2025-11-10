@@ -50,6 +50,7 @@ public:
         initializeWeights();
     }
 
+    
     void constructPerceptron(int numInputs) {
         // Capa de entrada + bias
         for (int i = 0; i < numInputs + 1; i++) {

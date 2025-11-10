@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/amarabarrera/Desktop/AI-Tasks/checkers/checkers",
+      "program": "/Users/amarabarrera/Desktop/AI-Tasks/checkers/checkers/build/Debug/outDebug"
+    }
+  ]
+}
