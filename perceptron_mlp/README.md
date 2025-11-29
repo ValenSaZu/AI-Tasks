@@ -31,23 +31,17 @@ PerceptronMLP
 
 ## Setup Instructions
 
-1. **Clone the repository**:
-   ```
-   git clone <repository-url>
-   cd PerceptronMLP
-   ```
-
-2. **Install dependencies**:
+1. **Install dependencies**:
    Ensure you have CUDA installed on your machine. Follow the installation instructions for your operating system.
 
-3. **Download the CIFAR-10 dataset**:
+2. **Download the CIFAR-10 dataset**:
    Run the script to download the dataset:
    ```
    cd scripts
    ./download_cifar.sh
    ```
 
-4. **Build the project**:
+3. **Build the project**:
    You can build the project using either CMake or Makefile.
 
    Using CMake:
@@ -63,7 +57,7 @@ PerceptronMLP
    make
    ```
 
-5. **Run the application**:
+4. **Run the application**:
    After building, you can run the application:
    ```
    ./main
